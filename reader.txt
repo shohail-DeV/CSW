@@ -1,0 +1,310 @@
+Password authorization:
+
+Router Commands:
+----
+Router> enable
+Router# configure terminal
+Router(config)# line console 0
+Router(config-line)# password iter@123
+Router(config-line)# login
+Router(config-line)# exit
+Router(config)# line vty 0 4
+Router(config-line)# password iter@123
+Router(config-line)# login
+Router(config-line)# exit
+Router(config)# enable secret iter@123
+Router(config)# exit
+Router# copy running-config startup-config
+
+
+Switch Commands:
+-------(Just change Router to Switch)
+
+----------------------------------------------------------------------------------------------------
+
+VLAN on switch & Inter VLAN routing:
+
+Switch Configuration:
+-------------------------
+Switch> enable
+Switch# configure terminal
+Switch(config)# vlan 10
+Switch(config-vlan)# name CSE_Core
+Switch(config-vlan)# exit
+Switch(config)# vlan 20
+Switch(config-vlan)# name CSE_AI
+Switch(config-vlan)# exit
+Switch(config)# vlan 30
+Switch(config-vlan)# name IT
+Switch(config-vlan)# exit
+Switch(config)# vlan 40
+Switch(config-vlan)# name EL
+Switch(config-vlan)# exit
+
+Switch(config)# interface range fastethernet 0/1 - 10
+Switch(config-if-range)# switchport mode access
+Switch(config-if-range)# switchport access vlan 10
+Switch(config-if-range)# exit
+
+Switch(config)# interface range fastethernet 0/11 - 20
+Switch(config-if-range)# switchport mode access
+Switch(config-if-range)# switchport access vlan 20
+Switch(config-if-range)# exit
+
+Switch(config)# interface range fastethernet 0/21 - 30
+Switch(config-if-range)# switchport mode access
+Switch(config-if-range)# switchport access vlan 30
+Switch(config-if-range)# exit
+
+Switch(config)# interface range fastethernet 0/31 - 40
+Switch(config-if-range)# switchport mode access
+Switch(config-if-range)# switchport access vlan 40
+Switch(config-if-range)# exit
+
+Switch(config)# interface gigabitethernet 0/1
+Switch(config-if)# switchport mode trunk
+Switch(config-if)# switchport trunk allowed vlan 10,20,30,40
+Switch(config-if)# exit
+
+
+Router Configuration:
+-------------------------
+Router> enable
+Router# configure terminal
+Router(config)# interface gigabitethernet 0/0.10
+Router(config-subif)# encapsulation dot1q 10
+Router(config-subif)# ip address 100.10.128.1 255.255.255.192
+Router(config-subif)# exit
+
+Router(config)# interface gigabitethernet 0/0.20
+Router(config-subif)# encapsulation dot1q 20
+Router(config-subif)# ip address 100.10.128.65 255.255.255.224
+Router(config-subif)# exit
+
+Router(config)# interface gigabitethernet 0/0.30
+Router(config-subif)# encapsulation dot1q 30
+Router(config-subif)# ip address 100.10.128.97 255.255.255.192
+Router(config-subif)# exit
+
+Router(config)# interface gigabitethernet 0/0.40
+Router(config-subif)# encapsulation dot1q 40
+Router(config-subif)# ip address 100.10.128.129 255.255.255.224
+Router(config-subif)# exit
+
+Router(config)# ip routing
+Router(config)# exit
+
+
+-------------------------------------------------------------------------------------------------------
+
+RIP routing:
+
+Router Sub-Interface Configuration:
+----------------
+Router> enable
+Router# configure terminal
+Router(config)# interface gigabitethernet 0/0.10
+Router(config-subif)# encapsulation dot1q 10
+Router(config-subif)# ip address 100.10.128.1 255.255.255.192
+Router(config-subif)# exit
+
+Router(config)# interface gigabitethernet 0/0.20
+Router(config-subif)# encapsulation dot1q 20
+Router(config-subif)# ip address 100.10.128.65 255.255.255.224
+Router(config-subif)# exit
+
+Router(config)# interface gigabitethernet 0/0.30
+Router(config-subif)# encapsulation dot1q 30
+Router(config-subif)# ip address 100.10.128.97 255.255.255.192
+Router(config-subif)# exit
+
+Router(config)# interface gigabitethernet 0/0.40
+Router(config-subif)# encapsulation dot1q 40
+Router(config-subif)# ip address 100.10.128.129 255.255.255.224
+Router(config-subif)# exit
+
+
+RIP Configuration:
+-------------------
+Router(config)# router rip
+Router(config-router)# version 2
+Router(config-router)# no auto-summary
+Router(config-router)# network 100.10.128.0
+Router(config-router)# exit
+Router(config)# ip routing
+Router(config)# exit
+Router# copy running-config startup-config
+
+------------------------------------------------------------------------------------------------------
+Static routes on Router():
+---------------------------
+Router> enable
+Router# configure terminal
+Router(config)# ip route 100.10.128.0 255.255.255.224 100.10.128.62 200
+Router(config)# ip route 100.10.128.32 255.255.255.192 100.10.128.30 200
+Router(config)# exit
+Router# copy running-config startup-config
+Router# show ip route
+
+ Explanation of the Available Path:
+
+- *IT to EL*: Traffic from the IT subnet (100.10.128.32/26) will be routed to the EL subnet (100.10.128.0/27) via the next hop IP 100.10.128.62 with an administrative distance of 200.
+- *EL to IT*: Traffic from the EL subnet (100.10.128.0/27) will be routed to the IT subnet (100.10.128.32/26) via the next hop IP 100.10.128.30 with an administrative distance of 200.
+
+These static routes provide a direct path between the IT and EL subnets. The administrative distance of 200 ensures that these static routes are used only when no other better route is available (since the default administrative distance for static routes is 1, and for RIP it's 120).
+
+
+------------------------------------------------------------------------------------------------------------------
+
+DHCP configuration :-
+----------------------------
+Router> enable
+Router# configure terminal
+
+Router(config)# ip dhcp excluded-address 100.10.128.1 100.10.128.1
+Router(config)# ip dhcp excluded-address 100.10.128.65 100.10.128.65
+Router(config)# ip dhcp excluded-address 100.10.128.129 100.10.128.129
+Router(config)# ip dhcp excluded-address 100.10.128.193 100.10.128.193
+
+Router(config)# ip dhcp pool CSE_Core
+Router(dhcp-config)# network 100.10.128.0 255.255.255.192
+Router(dhcp-config)# default-router 100.10.128.1
+Router(dhcp-config)# dns-server 8.8.8.8
+Router(dhcp-config)# exit
+
+Router(config)# ip dhcp pool CSE_AI
+Router(dhcp-config)# network 100.10.128.64 255.255.255.192
+Router(dhcp-config)# default-router 100.10.128.65
+Router(dhcp-config)# dns-server 8.8.8.8
+Router(dhcp-config)# exit
+
+Router(config)# ip dhcp pool IT
+Router(dhcp-config)# network 100.10.128.128 255.255.255.192
+Router(dhcp-config)# default-router 100.10.128.129
+Router(dhcp-config)# dns-server 8.8.8.8
+Router(dhcp-config)# exit
+
+Router(config)# ip dhcp pool EL
+Router(dhcp-config)# network 100.10.128.192 255.255.255.224
+Router(dhcp-config)# default-router 100.10.128.193
+Router(dhcp-config)# dns-server 8.8.8.8
+Router(dhcp-config)# exit
+
+Router(config)# exit
+Router# copy running-config startup-config
+
+-------------------------------------------------------------------------------------------------------------
+
+Summary of Commands:
+
+Modify DHCP Pools
+---------------------------
+Router> enable
+Router# configure terminal
+
+Router(config)# ip dhcp pool CSE_Core
+Router(dhcp-config)# dns-server 100.10.128.1
+Router(dhcp-config)# exit
+
+Router(config)# ip dhcp pool CSE_AI
+Router(dhcp-config)# dns-server 100.10.128.1
+Router(dhcp-config)# exit
+
+Router(config)# ip dhcp pool IT
+Router(dhcp-config)# dns-server 100.10.128.1
+Router(dhcp-config)# exit
+
+Router(config)# ip dhcp pool EL
+Router(dhcp-config)# dns-server 100.10.128.1
+Router(dhcp-config)# exit
+
+Router(config)# exit
+
+Router# copy running-config startup-config
+
+Verify DHCP:
+PC> ipconfig /all
+
+Verify DNS Resolution :
+PC> ping Router1
+PC> ping Switch1
+PC> ping Switch2
+PC> ping Switch3
+
+-----------------------------------------------------------------------------------------------
+
+Telnet configuration :
+-----------------------------------
+Router> enable
+Router# configure terminal
+Router(config)# line vty 0 4
+Router(config-line)# password iter@123
+Router(config-line)# login
+Router(config-line)# exit
+Router(config)# enable secret iter@123
+Router(config)# interface gigabitethernet 0/0
+Router(config-if)# ip address 100.10.128.1 255.255.255.192
+Router(config-if)# no shutdown
+Router(config-if)# exit
+Router# copy running-config startup-config
+
+--------------------------------------------------------------------------------------------------------------
+
+SSh :
+Router> enable
+Router# configure terminal
+Router(config)# hostname R1
+R1(config)# ip domain-name example.com
+R1(config)# crypto key generate rsa
+R1(config)# username admin privilege 15 secret your_password
+R1(config)# ip ssh version 2
+R1(config)# line vty 0 4
+R1(config-line)# transport input ssh
+R1(config-line)# login local
+R1(config-line)# exit
+R1(config)# line vty 0 4
+R1(config-line)# exec-timeout 5 0
+R1(config-line)# exit
+R1# write memory
+
+-----------------------------------------------------------------------
+
+ACL :
+
+plaintext
+Router> enable
+Router# configure terminal
+Router(config)# access-list 10 permit 192.168.10.0 0.0.0.255
+Router(config)# line vty 0 4
+Router(config-line)# access-class 10 in
+Router(config-line)# transport input ssh
+Router(config-line)# exit
+Router# write memory
+
+--------------------------------------------------------------
+
+bypass config:-
+rommon 1 > confreg 0x2142
+rommon 2 > reset
+
+
+show mac address-table
+
+copy running-config startup-config
+
+write erase
+-------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
